@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Reset Password | Sakha Clothing</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-50 min-h-screen flex items-center justify-center">
+
+  <div class="w-full max-w-md bg-white rounded-xl shadow-lg p-8">
+    <h2 class="text-2xl font-bold text-center mb-6 text-blue-700">Reset Password</h2>
+    <form id="resetForm" class="space-y-5">
+      <div>
+        <label class="block text-gray-700 mb-1">Password Baru</label>
+        <input
+          type="password"
+          id="password"
+          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          minlength="6"
+          required
+          placeholder="Password baru"
+        />
+      </div>
+      <div>
+        <label class="block text-gray-700 mb-1">Konfirmasi Password</label>
+        <input
+          type="password"
+          id="confirm"
+          class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-400"
+          minlength="6"
+          required
+          placeholder="Ulangi password baru"
+        />
+      </div>
+      <div id="errorMsg" class="text-red-600 text-sm text-center hidden"></div>
+      <div id="successMsg" class="text-green-600 text-center font-semibold mb-4 hidden"></div>
+      <button
+        type="submit"
+        id="submitBtn"
+        class="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition disabled:opacity-50"
+      >
+        Reset Password
+      </button>
+    </form>
+    <div class="mt-6 text-center text-gray-500 text-sm">
+      &copy; <span id="year"></span> Sakha Clothing
+    </div>
+  </div>
+
+  <script>
+    // Set tahun otomatis
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Ambil token dari URL
+    function getToken() {
+      const params = new URLSearchParams(window.location.search);
+      return params.get('token');
+    }
+
+    const form = document.getElementById('resetForm');
+    const passwordInput = document.getElementById('password');
+    const confirmInput = document.getElementById('confirm');
+    const errorMsg = document.getElementById('errorMsg');
+    const successMsg = document.getElementById('successMsg');
+    const submitBtn = document.getElementById('submitBtn');
+
+    form.addEventListener('submit', async function(e) {
+      e.preventDefault();
+      errorMsg.classList.add('hidden');
+      successMsg.classList.add('hidden');
+      errorMsg.textContent = '';
+      successMsg.textContent = '';
+
+      const password = passwordInput.value;
+      const confirm = confirmInput.value;
+      const token = getToken();
+
+      if (!token) {
+        errorMsg.textContent = 'Token reset tidak ditemukan di URL.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      if (password.length < 6) {
+        errorMsg.textContent = 'Password minimal 6 karakter.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+      if (password !== confirm) {
+        errorMsg.textContent = 'Konfirmasi password tidak sama.';
+        errorMsg.classList.remove('hidden');
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Memproses...';
+
+      try {
+        const res = await fetch('https://asia-southeast2-ornate-course-437014-u9.cloudfunctions.net/sakha/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token, password })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          successMsg.textContent = 'Password berhasil direset! Silakan login dengan password baru.';
+          successMsg.classList.remove('hidden');
+          form.reset();
+        } else {
+          errorMsg.textContent = data.error || 'Gagal reset password.';
+          errorMsg.classList.remove('hidden');
+        }
+      } catch (err) {
+        errorMsg.textContent = 'Terjadi kesalahan jaringan.';
+        errorMsg.classList.remove('hidden');
+      }
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Reset Password';
+    });
+  </script>
+</body>
+</html>
